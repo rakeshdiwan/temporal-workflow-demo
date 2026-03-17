@@ -1,0 +1,8 @@
+FROM node:20
+WORKDIR /app
+COPY tsconfig.base.json ./tsconfig.base.json
+COPY backend ./backend
+RUN cd backend && npm install && npm run build
+EXPOSE 4000
+CMD ["node", "backend/dist/server.js"]
+

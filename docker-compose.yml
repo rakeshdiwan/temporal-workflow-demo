@@ -1,0 +1,111 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: temporal_demo_postgres
+    environment:
+      POSTGRES_USER: temporal_demo
+      POSTGRES_PASSWORD: temporal_demo
+      POSTGRES_DB: temporal_demo
+    ports:
+      - '5432:5432'
+    volumes:
+      - temporal_demo_pgdata:/var/lib/postgresql/data
+      - ./worker/src/db/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U temporal_demo']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - temporal_demo_net
+
+  temporal:
+    image: temporalio/auto-setup:1.26.3
+    container_name: temporal_demo_temporal
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal_demo
+      POSTGRES_PWD: temporal_demo
+      POSTGRES_SEEDS: postgres
+    ports:
+      - '7233:7233'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - temporal_demo_net
+
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    container_name: temporal_demo_temporal_ui
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - '8080:8080'
+    depends_on:
+      - temporal
+    restart: unless-stopped
+    networks:
+      - temporal_demo_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: temporal-demo-backend:1.0.0
+    container_name: temporal_demo_backend
+    environment:
+      PORT: 4000
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_TASK_QUEUE: orders-task-queue
+    ports:
+      - '4000:4000'
+    depends_on:
+      - temporal
+    restart: unless-stopped
+    networks:
+      - temporal_demo_net
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: temporal-demo-worker:1.0.0
+    container_name: temporal_demo_worker
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_TASK_QUEUE: orders-task-queue
+      POSTGRES_URL: postgres://temporal_demo:temporal_demo@postgres:5432/temporal_demo
+    depends_on:
+      - temporal
+      - postgres
+    restart: unless-stopped
+    networks:
+      - temporal_demo_net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: temporal-demo-frontend:1.0.0
+    container_name: temporal_demo_frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:4000
+    ports:
+      - '5173:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - temporal_demo_net
+
+volumes:
+  temporal_demo_pgdata:
+
+networks:
+  temporal_demo_net:
+    driver: bridge
+

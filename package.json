@@ -1,0 +1,23 @@
+{
+  "name": "temporal-workflow-demo",
+  "version": "1.0.0",
+  "description": "Local Temporal workflow orchestration demo with Node, React, Postgres, and Docker.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:worker": "npm run dev --prefix worker",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "npm-run-all -p dev:backend dev:worker dev:frontend",
+    "test": "node --test tests/e2e/order-flow.e2e.test.mjs",
+    "test:e2e": "node --test tests/e2e/order-flow.e2e.test.mjs",
+    "test:docker:e2e": "docker compose up -d --build && node --test tests/e2e/order-flow.e2e.test.mjs && docker compose down -v"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
+

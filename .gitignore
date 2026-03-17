@@ -1,0 +1,24 @@
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Builds
+backend/dist/
+worker/dist/
+frontend/dist/
+
+# Env
+.env
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Docker
+*.log
+
